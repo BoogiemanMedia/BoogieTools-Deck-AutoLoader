@@ -68,21 +68,22 @@ function generateTaskAssignmentTable(assignmentData) {
     // Crear matriz de asignación
     var assignmentMatrix = createAssignmentMatrix(designersWithTotal, topics);
 
-    // Crear slide con tabla
+    // Crear slide y tabla usando API avanzada
     var presentation = SlidesApp.getActivePresentation();
-    var newSlide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+    var presentationId = presentation.getId();
+    var slideId = Utilities.getUuid();
 
-    log("Slide creado: " + newSlide.getObjectId());
+    log("Creando slide con ID: " + slideId);
 
-    // Crear la tabla en el slide
-    createTableInSlide(newSlide, designersWithTotal, topics, assignmentMatrix, log);
+    // Crear slide usando API avanzada
+    createSlideAndTable(presentationId, slideId, designersWithTotal, topics, assignmentMatrix, log);
 
     log("✓ Tabla de asignación generada exitosamente");
 
     return {
       success: true,
       log: debugLog,
-      slideId: newSlide.getObjectId()
+      slideId: slideId
     };
 
   } catch (error) {
@@ -131,22 +132,28 @@ function createAssignmentMatrix(designers, topics) {
 }
 
 /**
- * Crea la tabla visual en el slide
+ * Crea el slide y la tabla en una sola operación usando API avanzada
  */
-function createTableInSlide(slide, designers, topics, matrix, logFunction) {
+function createSlideAndTable(presentationId, slideId, designers, topics, matrix, logFunction) {
   var rows = designers.length + 1; // +1 para header
   var cols = topics.length + 1; // +1 para nombres
 
   logFunction("Creando tabla de " + rows + " filas x " + cols + " columnas");
 
-  // Crear tabla usando Advanced Slides API
-  var presentationId = SlidesApp.getActivePresentation().getId();
-  var slideId = slide.getObjectId();
   var tableId = Utilities.getUuid();
-
   var requests = [];
 
-  // 1. Crear la tabla
+  // 1. Crear el slide
+  requests.push({
+    createSlide: {
+      objectId: slideId,
+      slideLayoutReference: {
+        predefinedLayout: 'BLANK'
+      }
+    }
+  });
+
+  // 2. Crear la tabla en el slide
   requests.push({
     createTable: {
       objectId: tableId,
@@ -169,20 +176,14 @@ function createTableInSlide(slide, designers, topics, matrix, logFunction) {
     }
   });
 
-  // Ejecutar creación de tabla
-  Slides.Presentations.batchUpdate({ requests: requests }, presentationId);
-
-  logFunction("✓ Estructura de tabla creada");
-
-  // 2. Llenar contenido de la tabla
-  var contentRequests = [];
+  // 3. Llenar contenido de la tabla
 
   // Header: primera celda vacía
-  contentRequests.push(createCellTextRequest(tableId, 0, 0, "", true));
+  requests.push(createCellTextRequest(tableId, 0, 0, "", true));
 
   // Header: temas en primera fila
   for (var j = 0; j < topics.length; j++) {
-    contentRequests.push(createCellTextRequest(tableId, 0, j + 1, topics[j], true));
+    requests.push(createCellTextRequest(tableId, 0, j + 1, topics[j], true));
   }
 
   // Filas de diseñadores
@@ -191,19 +192,23 @@ function createTableInSlide(slide, designers, topics, matrix, logFunction) {
 
     // Primera columna: nombre del diseñador + cantidades
     var nameText = designer.name + "\n(S:" + designer.stills + " C:" + designer.conceptual + ")";
-    contentRequests.push(createCellTextRequest(tableId, i + 1, 0, nameText, false));
+    requests.push(createCellTextRequest(tableId, i + 1, 0, nameText, false));
 
     // Resto de columnas: marcar asignaciones
     for (var j = 0; j < topics.length; j++) {
       var cellText = matrix[i][j] ? "✓" : "";
-      contentRequests.push(createCellTextRequest(tableId, i + 1, j + 1, cellText, false));
+      requests.push(createCellTextRequest(tableId, i + 1, j + 1, cellText, false));
     }
   }
 
-  // Ejecutar llenado de contenido
-  Slides.Presentations.batchUpdate({ requests: contentRequests }, presentationId);
-
-  logFunction("✓ Contenido de tabla completado");
+  // Ejecutar TODO en una sola llamada
+  try {
+    Slides.Presentations.batchUpdate({ requests: requests }, presentationId);
+    logFunction("✓ Slide y tabla creados exitosamente");
+  } catch (e) {
+    logFunction("✗ Error creando slide y tabla: " + e.toString());
+    throw e;
+  }
 }
 
 /**
