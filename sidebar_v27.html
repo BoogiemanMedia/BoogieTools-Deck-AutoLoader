@@ -407,20 +407,6 @@
         </div>
       </div>
 
-      <!-- Temas -->
-      <div style="margin-bottom: 16px;">
-        <label class="input-label">Temas (ej: 1, 1a, 1b, 2, 3a...)</label>
-        <div id="topicsList" style="margin-bottom: 8px; max-height: 120px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
-        <div class="input-row">
-          <input type="text" id="topicInput" placeholder="Tema (ej: 1a)" style="flex: 1;">
-          <button onclick="addTopic()" class="secondary" style="flex: 0 0 auto;">+ Agregar</button>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: 4px;">
-          <button onclick="autoNumberTopics()" class="secondary" style="flex: 1; font-size: 12px;">Auto: 1, 2, 3...</button>
-          <button onclick="clearTopics()" class="secondary" style="flex: 1; font-size: 12px;">Limpiar</button>
-        </div>
-      </div>
-
       <!-- Generar tabla -->
       <button onclick="generateAssignmentTable()" class="full-width">🎨 Generar Tabla de Asignación</button>
     </div>
@@ -949,7 +935,6 @@
       // ========== FUNCIONES PARA ASIGNACIONES DE TAREAS ==========
 
       let designers = [];
-      let topics = [];
 
       function addDesigner() {
         const nameInput = document.getElementById('designerName');
@@ -1014,120 +999,6 @@
         }).join('');
       }
 
-      function addTopic() {
-        const input = document.getElementById('topicInput');
-        const topic = input.value.trim();
-
-        if (!topic) {
-          input.classList.add('error');
-          setToastStatus("⚠️ Ingresa un tema", 'error');
-          setTimeout(() => input.classList.remove('error'), 2000);
-          return;
-        }
-
-        // Validar formato (número con letra opcional: 1, 1a, 2b, etc.)
-        const pattern = /^\d+[a-z]?$/i;
-        if (!pattern.test(topic)) {
-          input.classList.add('error');
-          setToastStatus("⚠️ Formato inválido. Usa: 1, 1a, 2, 3b, etc.", 'error');
-          setTimeout(() => input.classList.remove('error'), 2000);
-          return;
-        }
-
-        // Verificar duplicados
-        if (topics.includes(topic)) {
-          input.classList.add('error');
-          setToastStatus("⚠️ El tema '" + topic + "' ya existe", 'error');
-          setTimeout(() => input.classList.remove('error'), 2000);
-          return;
-        }
-
-        topics.push(topic);
-        sortTopicsLocal();
-        input.value = '';
-        input.focus();
-        updateTopicsList();
-        setToastStatus("✓ Tema agregado: " + topic, 'success');
-      }
-
-      function removeTopic(index) {
-        const removed = topics.splice(index, 1)[0];
-        updateTopicsList();
-        setToastStatus("✓ Tema eliminado: " + removed, 'success');
-      }
-
-      function sortTopicsLocal() {
-        topics.sort(function(a, b) {
-          const matchA = a.match(/^(\d+)([a-z]?)$/i);
-          const matchB = b.match(/^(\d+)([a-z]?)$/i);
-
-          if (!matchA || !matchB) return 0;
-
-          const numA = parseInt(matchA[1]);
-          const numB = parseInt(matchB[1]);
-          const letterA = matchA[2].toLowerCase();
-          const letterB = matchB[2].toLowerCase();
-
-          if (numA !== numB) return numA - numB;
-          if (letterA < letterB) return -1;
-          if (letterA > letterB) return 1;
-          return 0;
-        });
-      }
-
-      function updateTopicsList() {
-        const container = document.getElementById('topicsList');
-
-        if (topics.length === 0) {
-          container.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px; padding: 4px; width: 100%;">No hay temas agregados</div>';
-          return;
-        }
-
-        container.innerHTML = topics.map((topic, index) => {
-          return `
-            <span class="topic-tag">
-              ${topic}
-              <span class="remove-topic" onclick="removeTopic(${index})" title="Eliminar">×</span>
-            </span>
-          `;
-        }).join('');
-      }
-
-      function autoNumberTopics() {
-        if (designers.length === 0) {
-          setToastStatus("⚠️ Primero agrega diseñadores", 'error');
-          return;
-        }
-
-        const stills = parseInt(document.getElementById('generalStills').value) || 0;
-        const conceptual = parseInt(document.getElementById('generalConceptual').value) || 0;
-        const piecesPerDesigner = stills + conceptual;
-
-        if (piecesPerDesigner === 0) {
-          setToastStatus("⚠️ Define cantidades de Stills y/o Conceptuales", 'error');
-          return;
-        }
-
-        const totalPieces = designers.length * piecesPerDesigner;
-
-        topics = [];
-        for (let i = 1; i <= totalPieces; i++) {
-          topics.push(i.toString());
-        }
-
-        updateTopicsList();
-        setToastStatus("✓ " + totalPieces + " temas generados (" + designers.length + " diseñadores × " + piecesPerDesigner + " piezas)", 'success');
-      }
-
-      function clearTopics() {
-        if (topics.length === 0) return;
-
-        if (confirm('¿Eliminar todos los temas (' + topics.length + ')?')) {
-          topics = [];
-          updateTopicsList();
-          setToastStatus("✓ Temas eliminados", 'success');
-        }
-      }
 
       function generateAssignmentTable() {
         if (isProcessing) return;
@@ -1135,11 +1006,6 @@
         // Validaciones
         if (designers.length === 0) {
           setToastStatus("⚠️ Debes agregar al menos un diseñador", 'error');
-          return;
-        }
-
-        if (topics.length === 0) {
-          setToastStatus("⚠️ Debes agregar al menos un tema", 'error');
           return;
         }
 
@@ -1155,28 +1021,16 @@
 
         const totalPieces = designers.length * piecesPerDesigner;
 
-        if (topics.length > totalPieces) {
-          if (!confirm('Hay más temas (' + topics.length + ') que piezas totales (' + totalPieces + '). Algunos temas no se asignarán. ¿Continuar?')) {
-            return;
-          }
-        }
-
         setProcessing(true);
         setToastStatus("⏳ Generando tabla de asignación...");
         document.getElementById('logContainer').classList.add('visible');
         document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
-        updateLog("Generando tabla de asignación...\nDiseñadores: " + designers.length + "\nPiezas por diseñador: " + piecesPerDesigner + "\nTemas: " + topics.length);
-
-        // Construir array de diseñadores con las cantidades generales
-        const designersWithCounts = designers.map(d => ({
-          name: d.name,
-          stills: stills,
-          conceptual: conceptual
-        }));
+        updateLog("Generando tabla de asignación...\nDiseñadores: " + designers.length + "\nStills: " + stills + "\nConceptuales: " + conceptual + "\nPiezas por diseñador: " + piecesPerDesigner + "\nTotal de piezas: " + totalPieces);
 
         const assignmentData = {
-          designers: designersWithCounts,
-          topics: topics
+          designers: designers,
+          stills: stills,
+          conceptual: conceptual
         };
 
         google.script.run
@@ -1208,14 +1062,10 @@
 
         // Inicializar listas de asignaciones
         updateDesignersList();
-        updateTopicsList();
 
         // Enter key handlers
         document.getElementById('designerName').addEventListener('keypress', function(e) {
           if (e.key === 'Enter') addDesigner();
-        });
-        document.getElementById('topicInput').addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') addTopic();
         });
 
         // Actualizar vista cuando cambien las cantidades generales
