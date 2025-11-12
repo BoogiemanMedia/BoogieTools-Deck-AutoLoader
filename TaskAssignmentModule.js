@@ -215,17 +215,16 @@ function createSlideAndTable(presentationId, slideId, designers, topics, matrix,
  * Crea un request para insertar texto en una celda de tabla
  */
 function createCellTextRequest(tableId, rowIndex, colIndex, text, isHeader) {
-  var location = {
-    tableStartLocation: {
-      rowIndex: rowIndex,
-      columnIndex: colIndex
-    }
-  };
-
   var request = {
     insertText: {
       objectId: tableId,
-      cellLocation: location,
+      cellLocation: {
+        tableCellLocation: {
+          tableObjectId: tableId,
+          rowIndex: rowIndex,
+          columnIndex: colIndex
+        }
+      },
       text: text,
       insertionIndex: 0
     }
