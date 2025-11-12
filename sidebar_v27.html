@@ -382,16 +382,29 @@
     <div class="card">
       <h3 class="card-title">📋 Asignaciones de Tareas</h3>
 
+      <!-- Cantidades Generales -->
+      <div style="margin-bottom: 16px;">
+        <label class="input-label">Cantidades por diseñador (aplica a todos)</label>
+        <div class="input-row">
+          <div class="input-group half">
+            <label class="input-label" style="margin-bottom: 2px;">Stills</label>
+            <input type="text" id="generalStills" placeholder="0" value="0" style="text-align: center;">
+          </div>
+          <div class="input-group half">
+            <label class="input-label" style="margin-bottom: 2px;">Conceptuales</label>
+            <input type="text" id="generalConceptual" placeholder="0" value="0" style="text-align: center;">
+          </div>
+        </div>
+      </div>
+
       <!-- Diseñadores -->
       <div style="margin-bottom: 16px;">
         <label class="input-label">Diseñadores</label>
         <div id="designersList" style="margin-bottom: 8px; max-height: 150px; overflow-y: auto;"></div>
         <div class="input-row">
-          <input type="text" id="designerName" placeholder="Nombre" style="flex: 2;">
-          <input type="text" id="designerStills" placeholder="Stills" style="flex: 1;">
-          <input type="text" id="designerConceptual" placeholder="Concept." style="flex: 1;">
+          <input type="text" id="designerName" placeholder="Nombre del diseñador" style="flex: 1;">
+          <button onclick="addDesigner()" class="secondary" style="flex: 0 0 auto; padding: 8px 12px;">+ Agregar</button>
         </div>
-        <button onclick="addDesigner()" class="secondary full-width" style="margin-top: 4px;">+ Agregar Diseñador</button>
       </div>
 
       <!-- Temas -->
@@ -940,12 +953,7 @@
 
       function addDesigner() {
         const nameInput = document.getElementById('designerName');
-        const stillsInput = document.getElementById('designerStills');
-        const conceptualInput = document.getElementById('designerConceptual');
-
         const name = nameInput.value.trim();
-        const stills = parseInt(stillsInput.value) || 0;
-        const conceptual = parseInt(conceptualInput.value) || 0;
 
         // Validaciones
         if (!name) {
@@ -956,24 +964,19 @@
           return;
         }
 
-        if (stills === 0 && conceptual === 0) {
-          stillsInput.classList.add('error');
-          conceptualInput.classList.add('error');
-          setToastStatus("⚠️ Ingresa al menos 1 pieza (Still o Conceptual)", 'error');
-          setTimeout(() => {
-            stillsInput.classList.remove('error');
-            conceptualInput.classList.remove('error');
-          }, 2000);
+        // Verificar que no esté duplicado
+        if (designers.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+          nameInput.classList.add('error');
+          setToastStatus("⚠️ El diseñador '" + name + "' ya existe", 'error');
+          setTimeout(() => nameInput.classList.remove('error'), 2000);
           return;
         }
 
-        // Agregar diseñador
-        designers.push({ name, stills, conceptual });
+        // Agregar diseñador (solo nombre)
+        designers.push({ name: name });
 
-        // Limpiar inputs
+        // Limpiar input
         nameInput.value = '';
-        stillsInput.value = '';
-        conceptualInput.value = '';
         nameInput.focus();
 
         // Actualizar UI
@@ -995,12 +998,16 @@
           return;
         }
 
+        // Obtener cantidades generales
+        const stills = parseInt(document.getElementById('generalStills').value) || 0;
+        const conceptual = parseInt(document.getElementById('generalConceptual').value) || 0;
+        const total = stills + conceptual;
+
         container.innerHTML = designers.map((d, index) => {
-          const total = d.stills + d.conceptual;
           return `
             <div class="designer-item">
               <span class="designer-name">${d.name}</span>
-              <span class="designer-counts">S:${d.stills} C:${d.conceptual} (${total})</span>
+              <span class="designer-counts">S:${stills} C:${conceptual} (${total})</span>
               <button class="remove-btn" onclick="removeDesigner(${index})" title="Eliminar">×</button>
             </div>
           `;
@@ -1087,12 +1094,21 @@
       }
 
       function autoNumberTopics() {
-        const totalPieces = designers.reduce((sum, d) => sum + d.stills + d.conceptual, 0);
-
-        if (totalPieces === 0) {
+        if (designers.length === 0) {
           setToastStatus("⚠️ Primero agrega diseñadores", 'error');
           return;
         }
+
+        const stills = parseInt(document.getElementById('generalStills').value) || 0;
+        const conceptual = parseInt(document.getElementById('generalConceptual').value) || 0;
+        const piecesPerDesigner = stills + conceptual;
+
+        if (piecesPerDesigner === 0) {
+          setToastStatus("⚠️ Define cantidades de Stills y/o Conceptuales", 'error');
+          return;
+        }
+
+        const totalPieces = designers.length * piecesPerDesigner;
 
         topics = [];
         for (let i = 1; i <= totalPieces; i++) {
@@ -1100,7 +1116,7 @@
         }
 
         updateTopicsList();
-        setToastStatus("✓ " + totalPieces + " temas generados automáticamente", 'success');
+        setToastStatus("✓ " + totalPieces + " temas generados (" + designers.length + " diseñadores × " + piecesPerDesigner + " piezas)", 'success');
       }
 
       function clearTopics() {
@@ -1127,7 +1143,17 @@
           return;
         }
 
-        const totalPieces = designers.reduce((sum, d) => sum + d.stills + d.conceptual, 0);
+        // Obtener cantidades generales
+        const stills = parseInt(document.getElementById('generalStills').value) || 0;
+        const conceptual = parseInt(document.getElementById('generalConceptual').value) || 0;
+        const piecesPerDesigner = stills + conceptual;
+
+        if (piecesPerDesigner === 0) {
+          setToastStatus("⚠️ Define cantidades de Stills y/o Conceptuales", 'error');
+          return;
+        }
+
+        const totalPieces = designers.length * piecesPerDesigner;
 
         if (topics.length > totalPieces) {
           if (!confirm('Hay más temas (' + topics.length + ') que piezas totales (' + totalPieces + '). Algunos temas no se asignarán. ¿Continuar?')) {
@@ -1139,10 +1165,17 @@
         setToastStatus("⏳ Generando tabla de asignación...");
         document.getElementById('logContainer').classList.add('visible');
         document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
-        updateLog("Generando tabla de asignación...\nDiseñadores: " + designers.length + "\nTemas: " + topics.length);
+        updateLog("Generando tabla de asignación...\nDiseñadores: " + designers.length + "\nPiezas por diseñador: " + piecesPerDesigner + "\nTemas: " + topics.length);
+
+        // Construir array de diseñadores con las cantidades generales
+        const designersWithCounts = designers.map(d => ({
+          name: d.name,
+          stills: stills,
+          conceptual: conceptual
+        }));
 
         const assignmentData = {
-          designers: designers,
+          designers: designersWithCounts,
           topics: topics
         };
 
@@ -1181,15 +1214,13 @@
         document.getElementById('designerName').addEventListener('keypress', function(e) {
           if (e.key === 'Enter') addDesigner();
         });
-        document.getElementById('designerStills').addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') addDesigner();
-        });
-        document.getElementById('designerConceptual').addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') addDesigner();
-        });
         document.getElementById('topicInput').addEventListener('keypress', function(e) {
           if (e.key === 'Enter') addTopic();
         });
+
+        // Actualizar vista cuando cambien las cantidades generales
+        document.getElementById('generalStills').addEventListener('input', updateDesignersList);
+        document.getElementById('generalConceptual').addEventListener('input', updateDesignersList);
       });
     </script>
   </body>
