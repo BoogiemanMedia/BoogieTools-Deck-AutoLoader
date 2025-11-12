@@ -219,11 +219,9 @@ function createCellTextRequest(tableId, rowIndex, colIndex, text, isHeader) {
     insertText: {
       objectId: tableId,
       cellLocation: {
-        tableCellLocation: {
-          tableObjectId: tableId,
-          rowIndex: rowIndex,
-          columnIndex: colIndex
-        }
+        tableObjectId: tableId,
+        rowIndex: rowIndex,
+        columnIndex: colIndex
       },
       text: text,
       insertionIndex: 0
