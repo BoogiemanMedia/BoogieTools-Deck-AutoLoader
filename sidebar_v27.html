@@ -255,6 +255,65 @@
       .color-circle:hover {
         transform: scale(1.2);
       }
+
+      /* Estilos para asignaciones de tareas */
+      .designer-item {
+        background-color: var(--primary-bg);
+        padding: 8px 10px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        border: 1px solid var(--border-color);
+      }
+      .designer-item .designer-name {
+        font-weight: 500;
+        flex: 1;
+      }
+      .designer-item .designer-counts {
+        color: var(--text-secondary);
+        font-size: 11px;
+        margin-right: 8px;
+      }
+      .designer-item .remove-btn {
+        background-color: transparent;
+        color: var(--error-color);
+        border: none;
+        padding: 2px 6px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 3px;
+        min-width: unset;
+        flex: unset;
+      }
+      .designer-item .remove-btn:hover {
+        background-color: rgba(217, 48, 37, 0.1);
+      }
+      .topic-tag {
+        background-color: var(--accent-color);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .topic-tag .remove-topic {
+        cursor: pointer;
+        font-weight: bold;
+        padding: 0 2px;
+        border-radius: 50%;
+        line-height: 1;
+      }
+      .topic-tag .remove-topic:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+      input[type="text"].error {
+        border-color: var(--error-color);
+      }
     </style>
   </head>
   <body>
@@ -318,6 +377,41 @@
       <h3 class="card-title">🎯 SafeZone Overlay</h3>
       <button id="btnSafezone" onclick="runSafezone()" class="full-width">Toggle SafeZone</button>
     </div>
+
+    <!-- Nueva sección de Asignaciones de Tareas -->
+    <div class="card">
+      <h3 class="card-title">📋 Asignaciones de Tareas</h3>
+
+      <!-- Diseñadores -->
+      <div style="margin-bottom: 16px;">
+        <label class="input-label">Diseñadores</label>
+        <div id="designersList" style="margin-bottom: 8px; max-height: 150px; overflow-y: auto;"></div>
+        <div class="input-row">
+          <input type="text" id="designerName" placeholder="Nombre" style="flex: 2;">
+          <input type="text" id="designerStills" placeholder="Stills" style="flex: 1;">
+          <input type="text" id="designerConceptual" placeholder="Concept." style="flex: 1;">
+        </div>
+        <button onclick="addDesigner()" class="secondary full-width" style="margin-top: 4px;">+ Agregar Diseñador</button>
+      </div>
+
+      <!-- Temas -->
+      <div style="margin-bottom: 16px;">
+        <label class="input-label">Temas (ej: 1, 1a, 1b, 2, 3a...)</label>
+        <div id="topicsList" style="margin-bottom: 8px; max-height: 120px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+        <div class="input-row">
+          <input type="text" id="topicInput" placeholder="Tema (ej: 1a)" style="flex: 1;">
+          <button onclick="addTopic()" class="secondary" style="flex: 0 0 auto;">+ Agregar</button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <button onclick="autoNumberTopics()" class="secondary" style="flex: 1; font-size: 12px;">Auto: 1, 2, 3...</button>
+          <button onclick="clearTopics()" class="secondary" style="flex: 1; font-size: 12px;">Limpiar</button>
+        </div>
+      </div>
+
+      <!-- Generar tabla -->
+      <button onclick="generateAssignmentTable()" class="full-width">🎨 Generar Tabla de Asignación</button>
+    </div>
+
     <div class="divider"></div>         
     <div id="toast">Listo para usar</div>
     <button id="toggleLogBtn" onclick="toggleLog()" class="secondary">📋 Ver log detallado</button>
@@ -839,10 +933,263 @@
           .testVisualMappingAdvanced();
       }
       
+      // ========== FUNCIONES PARA ASIGNACIONES DE TAREAS ==========
+
+      let designers = [];
+      let topics = [];
+
+      function addDesigner() {
+        const nameInput = document.getElementById('designerName');
+        const stillsInput = document.getElementById('designerStills');
+        const conceptualInput = document.getElementById('designerConceptual');
+
+        const name = nameInput.value.trim();
+        const stills = parseInt(stillsInput.value) || 0;
+        const conceptual = parseInt(conceptualInput.value) || 0;
+
+        // Validaciones
+        if (!name) {
+          nameInput.classList.add('error');
+          setToastStatus("⚠️ Ingresa el nombre del diseñador", 'error');
+          nameInput.focus();
+          setTimeout(() => nameInput.classList.remove('error'), 2000);
+          return;
+        }
+
+        if (stills === 0 && conceptual === 0) {
+          stillsInput.classList.add('error');
+          conceptualInput.classList.add('error');
+          setToastStatus("⚠️ Ingresa al menos 1 pieza (Still o Conceptual)", 'error');
+          setTimeout(() => {
+            stillsInput.classList.remove('error');
+            conceptualInput.classList.remove('error');
+          }, 2000);
+          return;
+        }
+
+        // Agregar diseñador
+        designers.push({ name, stills, conceptual });
+
+        // Limpiar inputs
+        nameInput.value = '';
+        stillsInput.value = '';
+        conceptualInput.value = '';
+        nameInput.focus();
+
+        // Actualizar UI
+        updateDesignersList();
+        setToastStatus("✓ Diseñador agregado: " + name, 'success');
+      }
+
+      function removeDesigner(index) {
+        const removed = designers.splice(index, 1)[0];
+        updateDesignersList();
+        setToastStatus("✓ Diseñador eliminado: " + removed.name, 'success');
+      }
+
+      function updateDesignersList() {
+        const container = document.getElementById('designersList');
+
+        if (designers.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px; padding: 8px;">No hay diseñadores agregados</div>';
+          return;
+        }
+
+        container.innerHTML = designers.map((d, index) => {
+          const total = d.stills + d.conceptual;
+          return `
+            <div class="designer-item">
+              <span class="designer-name">${d.name}</span>
+              <span class="designer-counts">S:${d.stills} C:${d.conceptual} (${total})</span>
+              <button class="remove-btn" onclick="removeDesigner(${index})" title="Eliminar">×</button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function addTopic() {
+        const input = document.getElementById('topicInput');
+        const topic = input.value.trim();
+
+        if (!topic) {
+          input.classList.add('error');
+          setToastStatus("⚠️ Ingresa un tema", 'error');
+          setTimeout(() => input.classList.remove('error'), 2000);
+          return;
+        }
+
+        // Validar formato (número con letra opcional: 1, 1a, 2b, etc.)
+        const pattern = /^\d+[a-z]?$/i;
+        if (!pattern.test(topic)) {
+          input.classList.add('error');
+          setToastStatus("⚠️ Formato inválido. Usa: 1, 1a, 2, 3b, etc.", 'error');
+          setTimeout(() => input.classList.remove('error'), 2000);
+          return;
+        }
+
+        // Verificar duplicados
+        if (topics.includes(topic)) {
+          input.classList.add('error');
+          setToastStatus("⚠️ El tema '" + topic + "' ya existe", 'error');
+          setTimeout(() => input.classList.remove('error'), 2000);
+          return;
+        }
+
+        topics.push(topic);
+        sortTopicsLocal();
+        input.value = '';
+        input.focus();
+        updateTopicsList();
+        setToastStatus("✓ Tema agregado: " + topic, 'success');
+      }
+
+      function removeTopic(index) {
+        const removed = topics.splice(index, 1)[0];
+        updateTopicsList();
+        setToastStatus("✓ Tema eliminado: " + removed, 'success');
+      }
+
+      function sortTopicsLocal() {
+        topics.sort(function(a, b) {
+          const matchA = a.match(/^(\d+)([a-z]?)$/i);
+          const matchB = b.match(/^(\d+)([a-z]?)$/i);
+
+          if (!matchA || !matchB) return 0;
+
+          const numA = parseInt(matchA[1]);
+          const numB = parseInt(matchB[1]);
+          const letterA = matchA[2].toLowerCase();
+          const letterB = matchB[2].toLowerCase();
+
+          if (numA !== numB) return numA - numB;
+          if (letterA < letterB) return -1;
+          if (letterA > letterB) return 1;
+          return 0;
+        });
+      }
+
+      function updateTopicsList() {
+        const container = document.getElementById('topicsList');
+
+        if (topics.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px; padding: 4px; width: 100%;">No hay temas agregados</div>';
+          return;
+        }
+
+        container.innerHTML = topics.map((topic, index) => {
+          return `
+            <span class="topic-tag">
+              ${topic}
+              <span class="remove-topic" onclick="removeTopic(${index})" title="Eliminar">×</span>
+            </span>
+          `;
+        }).join('');
+      }
+
+      function autoNumberTopics() {
+        const totalPieces = designers.reduce((sum, d) => sum + d.stills + d.conceptual, 0);
+
+        if (totalPieces === 0) {
+          setToastStatus("⚠️ Primero agrega diseñadores", 'error');
+          return;
+        }
+
+        topics = [];
+        for (let i = 1; i <= totalPieces; i++) {
+          topics.push(i.toString());
+        }
+
+        updateTopicsList();
+        setToastStatus("✓ " + totalPieces + " temas generados automáticamente", 'success');
+      }
+
+      function clearTopics() {
+        if (topics.length === 0) return;
+
+        if (confirm('¿Eliminar todos los temas (' + topics.length + ')?')) {
+          topics = [];
+          updateTopicsList();
+          setToastStatus("✓ Temas eliminados", 'success');
+        }
+      }
+
+      function generateAssignmentTable() {
+        if (isProcessing) return;
+
+        // Validaciones
+        if (designers.length === 0) {
+          setToastStatus("⚠️ Debes agregar al menos un diseñador", 'error');
+          return;
+        }
+
+        if (topics.length === 0) {
+          setToastStatus("⚠️ Debes agregar al menos un tema", 'error');
+          return;
+        }
+
+        const totalPieces = designers.reduce((sum, d) => sum + d.stills + d.conceptual, 0);
+
+        if (topics.length > totalPieces) {
+          if (!confirm('Hay más temas (' + topics.length + ') que piezas totales (' + totalPieces + '). Algunos temas no se asignarán. ¿Continuar?')) {
+            return;
+          }
+        }
+
+        setProcessing(true);
+        setToastStatus("⏳ Generando tabla de asignación...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Generando tabla de asignación...\nDiseñadores: " + designers.length + "\nTemas: " + topics.length);
+
+        const assignmentData = {
+          designers: designers,
+          topics: topics
+        };
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Tabla de asignación generada exitosamente", 'success');
+            } else {
+              setToastStatus("✗ Error generando tabla: " + (result.error || "desconocido"), 'error');
+            }
+          })
+          .withFailureHandler(function(error) {
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .generateTaskAssignmentTable(assignmentData);
+      }
+
+      // ========== FIN FUNCIONES ASIGNACIONES ==========
+
       // Inicialización
       document.addEventListener('DOMContentLoaded', function() {
         // Auto-focus en el campo de folder ID
         document.getElementById('folderId').focus();
+
+        // Inicializar listas de asignaciones
+        updateDesignersList();
+        updateTopicsList();
+
+        // Enter key handlers
+        document.getElementById('designerName').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') addDesigner();
+        });
+        document.getElementById('designerStills').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') addDesigner();
+        });
+        document.getElementById('designerConceptual').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') addDesigner();
+        });
+        document.getElementById('topicInput').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') addTopic();
+        });
       });
     </script>
   </body>
