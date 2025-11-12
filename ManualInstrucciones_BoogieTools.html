@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Manual de Uso — BoogieTools</title>
+<style>
+  :root {
+    --primary-bg: #e0f7fa;      /* Celeste muy claro */
+    --secondary-bg: #ffffff;    /* Blanco */
+    --accent-color: #00bcd4;    /* Cyan vibrante */
+    --accent-hover: #0097a7;    /* Cyan oscuro */
+    --text-color: #004d61;      /* Azul oscuro */
+    --border-color: #4dd0e1;    /* Cyan claro */
+  }
+  body {
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    background-color: var(--secondary-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 {
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  h2 {
+    color: var(--accent-hover);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 4px;
+    margin-top: 28px;
+  }
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  li {
+    background: var(--primary-bg);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  li b {
+    color: var(--accent-hover);
+  }
+  .emoji {
+    font-size: 18px;
+    margin-right: 6px;
+  }
+  .section {
+    margin-bottom: 16px;
+  }
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: #007c91;
+    margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Manual de Uso — BoogieTools</h1>
+    <p>Guía rápida para diseñadores. Explica cada botón y herramienta disponible en el panel BoogieTools dentro de Google Slides.</p>
+
+    <h2>📁 CARGA DE IMÁGENES</h2>
+    <ul>
+      <li><b>Branded:</b> Carga automáticamente los mockups <i>Branded</i> desde una carpeta de Drive. Genera los slides con layouts y posiciones predeterminadas.</li>
+      <li><b>UnBranded:</b> Carga los mockups <i>UnBranded</i> (sin marca) usando su layout específico.</li>
+      <li><b>AVA Reco:</b> Crea los slides de recomendaciones <i>AVA</i> automáticamente con sus posiciones predefinidas.</li>
+    </ul>
+
+    <h2>🎨 MARCADO Y REVISIÓN</h2>
+    <ul>
+      <li><b>🟢 / 🟡 / 🔴:</b> Aplica un borde verde, amarillo o rojo a la imagen seleccionada para marcar estado de revisión (Aprobado, Revisar, Corregir).</li>
+      <li><b>Numerar Selección:</b> Aplica numeración automática (UBA #1, #2, etc.) con formato y número inicial personalizable.</li>
+    </ul>
+
+    <h2>🧩 ORGANIZACIÓN E ÍNDICES</h2>
+    <ul>
+      <li><b>Generar Índice:</b> Crea un slide índice automático con todas las UBAs cargadas, incluyendo hipervínculos.</li>
+      <li><b>Reordenar desde Índice:</b> (opcional) Reorganiza automáticamente los slides según el orden del índice.</li>
+    </ul>
+
+    <h2>💾 DESCARGA DE IMÁGENES</h2>
+    <ul>
+      <li><b>Selección:</b> Descarga la imagen seleccionada en su formato original (mantiene el nombre si es posible).</li>
+      <li><b>Todas:</b> Descarga todas las imágenes del slide activo. Si hay varias, muestra enlaces individuales.</li>
+    </ul>
+
+    <h2>🎯 SAFEZONES</h2>
+    <ul>
+      <li><b>Toggle SafeZone:</b> Muestra u oculta las áreas seguras del diseño (SafeZones) según el tipo de slide (UBA Rectangle, Square, Mockups, etc.).</li>
+    </ul>
+
+    <h2>📋 LOG Y ESTADO</h2>
+    <ul>
+      <li><b>Ver Log Detallado:</b> Muestra los mensajes técnicos del proceso (slides creados, errores, tiempos, etc.).</li>
+      <li><b>Mensajes de Estado:</b> El recuadro inferior ("toast") informa progreso y resultado de cada acción.</li>
+    </ul>
+
+    <div class="footer">
+      Boogieman Media · Herramienta interna de automatización · v10
+    </div>
+  </div>
+</body>
+</html>

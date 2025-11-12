@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      :root {
+        --primary-bg: #f5f5f5;
+        --secondary-bg: #ffffff;
+        --accent-color: #1a73e8;
+        --accent-hover: #1557b0;
+        --text-color: #202124;
+        --text-secondary: #5f6368;
+        --border-color: #dadce0;
+        --success-color: #188038;
+        --error-color: #d93025;
+        --warning-color: #f9ab00;
+        --shadow: 0 1px 3px rgba(60,64,67,0.3);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background-color: var(--primary-bg);
+        color: var(--text-color);
+        font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .card {
+        background-color: var(--secondary-bg);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 2px rgba(60,64,67,0.15);
+      }
+      .card-title {
+        margin: 0 0 12px;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-title::before {
+        content: '';
+        width: 4px;
+        height: 20px;
+        background-color: var(--accent-color);
+        border-radius: 2px;
+      }
+      .input-group {
+        margin-bottom: 12px;
+      }
+      .input-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .input-group.half {
+        flex: 1;
+        margin-bottom: 0;
+      }
+      .input-label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: var(--secondary-bg);
+        color: var(--text-color);
+        transition: border-color 0.2s;
+      }
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent-color);
+      }
+      input[type="text"]:hover {
+        border-color: var(--text-secondary);
+      }
+      .button-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .button-group.inline {
+        display: inline-flex;
+        width: 100%;
+      }
+      button {
+        background-color: var(--accent-color);
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #ffffff;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex: 1;
+        min-width: 80px;
+      }
+      button:hover {
+        background-color: var(--accent-hover);
+        box-shadow: var(--shadow);
+      }
+      button:active {
+        transform: translateY(1px);
+      }
+      button:disabled {
+        background-color: #e8eaed;
+        color: #80868b;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      button.secondary {
+        background-color: var(--secondary-bg);
+        color: var(--accent-color);
+        border: 1px solid var(--border-color);
+      }
+      button.secondary:hover {
+        background-color: #f8f9fa;
+        border-color: var(--accent-color);
+      }
+      button.full-width {
+        width: 100%;
+        flex: unset;
+      }
+      #toast {
+        margin-top: 12px;
+        padding: 12px;
+        background-color: var(--secondary-bg);
+        border-left: 4px solid var(--accent-color);
+        border-radius: 4px;
+        font-size: 13px;
+        box-shadow: 0 1px 2px rgba(60,64,67,0.1);
+      }
+      #toast.success {
+        border-left-color: var(--success-color);
+      }
+      #toast.error {
+        border-left-color: var(--error-color);
+      }
+      #logContainer {
+        margin-top: 12px;
+        padding: 12px;
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 12px;
+        border-radius: 4px;
+        max-height: 320px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        display: none;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+      }
+      #logContainer.visible {
+        display: block;
+      }
+      #logContainer::-webkit-scrollbar {
+        width: 8px;
+      }
+      #logContainer::-webkit-scrollbar-track {
+        background: #2d2d2d;
+      }
+      #logContainer::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      #logContainer::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+      }
+      #toggleLogBtn {
+        background-color: transparent;
+        color: var(--text-secondary);
+        font-size: 12px;
+        padding: 4px 8px;
+        margin-top: 8px;
+        border: 1px solid var(--border-color);
+        min-width: unset;
+      }
+      #toggleLogBtn:hover {
+        background-color: var(--primary-bg);
+        color: var(--text-color);
+      }
+      .divider {
+        height: 1px;
+        background-color: var(--border-color);
+        margin: 16px 0;
+      }
+      a {
+        color: var(--accent-color);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .processing {
+        position: relative;
+        overflow: hidden;
+      }
+      .processing::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 1.5s infinite;
+      }
+      @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+      .log-success { color: #4ade80; }
+      .log-error { color: #f87171; }
+      .log-warning { color: #fbbf24; }
+      .log-info { color: #60a5fa; }
+      .log-header { color: #c084fc; font-weight: bold; }
+      
+      /* Iconos */
+      .icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: text-bottom;
+        margin-right: 4px;
+      }
+      
+      /* ————— Nuevas reglas para los botones de color ————— */
+      .color-buttons {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .color-circle {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid var(--border-color);
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .color-circle:hover {
+        transform: scale(1.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h3 class="card-title">📁 Cargar Imágenes</h3>
+      <div class="input-group">
+        <label class="input-label">ID de la carpeta de Drive</label>
+        <input type="text" id="folderId" placeholder="Ejemplo: 1KMk9sU3OvPDdmKrWJNLsC_Jtm6vpcbN8">
+      </div>
+      <div class="button-group">
+        <button id="btnBranded" onclick="runScript()">Cargar Mockups</button>
+      </div>
+    </div>
+ 
+     <div class="card">   
+          <!-- ——— Botones circulares de corrección ——— -->
+      <div class="color-buttons">
+        <div class="color-circle" style="background-color: #00FF00;"
+             title="Borde Verde" onclick="runGreenBorder()"></div>
+        <div class="color-circle" style="background-color: #FFFF00;"
+             title="Borde Amarillo" onclick="runYellowBorder()"></div>
+        <div class="color-circle" style="background-color: #FF0000;"
+             title="Borde Rojo" onclick="runRedBorder()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">🔢 Numerar</h3>
+      <div class="input-row">
+        <div class="input-group half">
+          <label class="input-label">Número inicial</label>
+          <input type="text" id="labelStart" placeholder="1">
+        </div>
+        <div class="input-group half">
+          <label class="input-label">Formato</label>
+          <input type="text" id="labelFormat" placeholder="UBA #" value="UBA #">
+        </div>
+      </div>
+      <button id="btnLabel" onclick="runLabelling()" class="full-width">Numerar Selección</button>
+    </div>
+    
+    <div class="card">
+      <h3 class="card-title">🔄 Crear Índice</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); margin: 8px 0;">
+        Genera índice automático desde UBAs existentes.
+      </p>
+      
+      <div class="button-group" style="margin-bottom: 12px;">
+        <button onclick="runGenerateIndex()" class="full-width">🔧 Generar Índice</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">💾 Descargar Imágenes</h3>
+      <div class="button-group inline">
+        <button id="btnDownloadSel" onclick="runDownloadImages()">Selección</button>
+        <button id="btnDownloadAll" onclick="runDownloadAllImages()">Todas</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="card-title">🎯 SafeZone Overlay</h3>
+      <button id="btnSafezone" onclick="runSafezone()" class="full-width">Toggle SafeZone</button>
+    </div>
+    <div class="divider"></div>         
+    <div id="toast">Listo para usar</div>
+    <button id="toggleLogBtn" onclick="toggleLog()" class="secondary">📋 Ver log detallado</button>
+    <div id="logContainer"></div>
+    
+    <script>
+      let isProcessing = false;
+      
+      function setProcessing(state) {
+        isProcessing = state;
+        const buttons = document.querySelectorAll('button:not(#toggleLogBtn)');
+        buttons.forEach(btn => {
+          btn.disabled = state;
+          if (state) {
+            btn.classList.add('processing');
+          } else {
+            btn.classList.remove('processing');
+          }
+        });
+      }
+      
+      function setToastStatus(message, status = 'info') {
+        const toast = document.getElementById('toast');
+        toast.innerText = message;
+        toast.className = '';
+        if (status === 'success') {
+          toast.classList.add('success');
+        } else if (status === 'error') {
+          toast.classList.add('error');
+        }
+      }
+      
+      function updateLog(logText) {
+        const logContainer = document.getElementById('logContainer');
+        // Aplicar colores y estilos
+        logText = logText.replace(/✓/g, '<span class="log-success">✓</span>');
+        logText = logText.replace(/✗/g, '<span class="log-error">✗</span>');
+        logText = logText.replace(/⚠️/g, '<span class="log-warning">⚠️</span>');
+        logText = logText.replace(/→/g, '<span class="log-info">→</span>');
+        logText = logText.replace(/===(.*?)===/g, '<span class="log-header">=== $1 ===</span>');
+        logText = logText.replace(/---(.*?)$/gm, '<span class="log-info">--- $1</span>');
+        logContainer.innerHTML = logText;
+        // Auto-scroll al final
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+      
+      function toggleLog() {
+        const logContainer = document.getElementById('logContainer');
+        const toggleBtn = document.getElementById('toggleLogBtn');
+        logContainer.classList.toggle('visible');
+        if (logContainer.classList.contains('visible')) {
+          toggleBtn.innerHTML = '📋 Ocultar log detallado';
+        } else {
+          toggleBtn.innerHTML = '📋 Ver log detallado';
+        }
+      }
+      
+      function validateFolderId(folderId) {
+        // Verificar que el ID tenga el formato correcto
+        if (!folderId || folderId.trim() === '') {
+          setToastStatus("⚠️ Por favor ingresa un ID de carpeta", 'error');
+          return false;
+        }
+        
+        // Los IDs de Google Drive suelen tener entre 20-40 caracteres alfanuméricos
+        var cleanId = folderId.trim();
+        if (cleanId.length < 20 || cleanId.length > 50) {
+          setToastStatus("⚠️ El ID de carpeta parece incorrecto (longitud inválida)", 'error');
+          return false;
+        }
+        
+        // Verificar que solo contenga caracteres válidos
+        if (!/^[a-zA-Z0-9_-]+$/.test(cleanId)) {
+          setToastStatus("⚠️ El ID de carpeta contiene caracteres inválidos", 'error');
+          return false;
+        }
+        
+        return true;
+      }
+      
+      function runScript() {
+        if (isProcessing) return;
+        var folderId = document.getElementById('folderId').value.trim();
+        
+        if (!validateFolderId(folderId)) {
+          document.getElementById('folderId').focus();
+          return;
+        }
+        
+        setProcessing(true);
+        setToastStatus("⏳ Procesando imágenes Branded...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando proceso Branded...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Proceso Branded completado exitosamente", 'success');
+            } else {
+              setToastStatus("✗ Error en el proceso Branded (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .importImagesInBatch(folderId);
+      }
+      
+      function runScriptUnbranded() {
+        if (isProcessing) return;
+        var folderId = document.getElementById('folderId').value.trim();
+        
+        if (!validateFolderId(folderId)) {
+          document.getElementById('folderId').focus();
+          return;
+        }
+        
+        setProcessing(true);
+        setToastStatus("⏳ Procesando imágenes UnBranded...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando proceso UnBranded...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Proceso UnBranded completado exitosamente", 'success');
+            } else {
+              setToastStatus("✗ Error en el proceso UnBranded (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .importImagesInBatchUnbranded(folderId);
+      }
+      
+      function runAVA() {
+        if (isProcessing) return;
+        var folderId = document.getElementById('folderId').value.trim();
+        
+        // AVA puede usar carpeta por defecto si no se especifica
+        if (folderId && !validateFolderId(folderId)) {
+          document.getElementById('folderId').focus();
+          return;
+        }
+        
+        setProcessing(true);
+        setToastStatus("⏳ Procesando AVA Recommendations...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando proceso AVA Recommendations...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Proceso AVA completado exitosamente", 'success');
+            } else {
+              setToastStatus("✗ Error en el proceso AVA (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .avaRecommendations(folderId);
+      }
+      
+      function runLabelling() {
+        if (isProcessing) return;
+        setProcessing(true);
+        var labelStart = document.getElementById('labelStart').value;
+        var labelFormat = document.getElementById('labelFormat').value;
+        setToastStatus("⏳ Numerando elementos...");
+        
+        google.script.run.withSuccessHandler(function(result){
+          setProcessing(false);
+          if (typeof result === "number") {
+            setToastStatus("✓ " + result + " elementos numerados", 'success');
+          } else {
+            setToastStatus(result, result.includes('Error') ? 'error' : 'success');
+          }
+        }).withFailureHandler(function(error){
+          setProcessing(false);
+          setToastStatus("✗ Error: " + error.message, 'error');
+        }).labelSequenceCustom(labelStart, labelFormat);
+      }
+      
+      function runGenerateIndex() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Generando índice automático desde UBAs...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando generación de índice automático...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Índice automático generado exitosamente", 'success');
+            } else {
+              setToastStatus("✗ Error generando índice automático (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .generateIndexFromUBAs();
+      }
+      
+      function runDownloadImages() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Preparando descarga de imagen seleccionada...");
+        
+        google.script.run.withSuccessHandler(function(result) {
+          setProcessing(false);
+          if (result.error) {
+            setToastStatus("✗ " + result.error, 'error');
+          } else if (Array.isArray(result) && result.length > 0) {
+            if (result.length === 1) {
+              var a = document.createElement("a");
+              a.href = result[0].dataUrl;
+              a.download = result[0].fileName;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setToastStatus("✓ Descarga completada: " + result[0].fileName, 'success');
+            } else {
+              var linksHTML = "📥 Descarga las siguientes imágenes:<br><br>";
+              for (var i = 0; i < result.length; i++) {
+                linksHTML += '<a href="' + result[i].dataUrl + '" download="' + result[i].fileName + '">' + result[i].fileName + '</a><br>';
+              }
+              document.getElementById("toast").innerHTML = linksHTML;
+            }
+          } else {
+            setToastStatus("⚠️ No se encontró ninguna imagen para descargar", 'error');
+          }
+        }).withFailureHandler(function(error){
+          setProcessing(false);
+          setToastStatus("✗ Error: " + error.message, 'error');
+        }).downloadSelectedImages();
+      }
+      
+      function runDownloadAllImages() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Preparando descarga de todas las imágenes...");
+        
+        google.script.run.withSuccessHandler(function(result) {
+          setProcessing(false);
+          var output = "";
+          if (result.error) {
+            setToastStatus("✗ " + result.error, 'error');
+          } else if (result.images && result.images.length > 0) {
+            if (result.images.length === 1) {
+              var a = document.createElement("a");
+              a.href = result.images[0].dataUrl;
+              a.download = result.images[0].fileName;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setToastStatus("✓ Descarga completada: " + result.images[0].fileName, 'success');
+            } else {
+              output = "📥 Descarga las siguientes " + result.images.length + " imágenes:<br><br>";
+              for (var i = 0; i < result.images.length; i++) {
+                output += '<a href="' + result.images[i].dataUrl + '" download="' + result.images[i].fileName + '">' + result.images[i].fileName + '</a><br>';
+              }
+              document.getElementById("toast").innerHTML = output;
+            }
+          } else {
+            setToastStatus("⚠️ No se encontraron imágenes en el slide", 'error');
+          }
+        }).withFailureHandler(function(error){
+          setProcessing(false);
+          setToastStatus("✗ Error: " + error.message, 'error');
+        }).debugDownloadAllImagesFromSlide();
+      }
+      
+      function runSafezone() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Procesando SafeZone Overlay...");
+        
+        google.script.run.withSuccessHandler(function(result){
+          setProcessing(false);
+          if (result.includes('Error') || result.includes('error')) {
+            setToastStatus(result, 'error');
+          } else {
+            setToastStatus(result, 'success');
+          }
+        }).withFailureHandler(function(error){
+          setProcessing(false);
+          setToastStatus("✗ Error: " + error.message, 'error');
+        }).toggleSafezonesOverlay();
+      }
+      
+      // ————— Nuevas funciones de los botones de color —————
+      function runGreenBorder() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Aplicando borde verde…");
+        google.script.run.withSuccessHandler(function(){
+          setProcessing(false);
+          setToastStatus("✓ Borde verde aplicado.", "success");
+        }).addGreenBorder();
+      }
+      
+      function runYellowBorder() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Aplicando borde amarillo…");
+        google.script.run.withSuccessHandler(function(){
+          setProcessing(false);
+          setToastStatus("✓ Borde amarillo aplicado.", "success");
+        }).addYellowBorder();
+      }
+      
+      function runRedBorder() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Aplicando borde rojo…");
+        google.script.run.withSuccessHandler(function(){
+          setProcessing(false);
+          setToastStatus("✓ Borde rojo aplicado.", "success");
+        }).addRedBorder();
+      }
+      
+      // Resto de las funciones existentes…
+      function runDebugLayouts() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Analizando layouts disponibles...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando análisis de layouts...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Análisis de layouts completado", 'success');
+            } else {
+              setToastStatus("✗ Error en análisis de layouts (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .debugLayouts();
+      }
+      
+      function runGenerateIndex() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Generando índice automático desde UBAs...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando generación de índice automático...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Índice automático generado exitosamente", 'success');
+            } else {
+              setToastStatus("✗ Error generando índice automático (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .generateIndexFromUBAs();
+      }
+      
+      function runReorderFromIndex() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Reordenando desde índice linkeado...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando reordenamiento desde índice...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Reordenamiento desde índice completado", 'success');
+            } else {
+              setToastStatus("✗ Error en reordenamiento desde índice (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .reorderFromLinkedIndex();
+      }
+      
+      function runReorderSlides() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Reordenando slides por índice (método clásico)...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando reordenamiento clásico...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Slides reordenados exitosamente", 'success');
+            } else {
+              setToastStatus("✗ Error en el reordenamiento (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .reorderSlidesByIndex();
+      }
+      
+      function runVisualMappingSimple() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Ejecutando mapeo visual simple...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando mapeo visual simple...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Mapeo visual simple completado", 'success');
+            } else {
+              setToastStatus("✗ Error en mapeo visual simple (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .testVisualMappingSimple();
+      }
+      
+      function runVisualMappingAdvanced() {
+        if (isProcessing) return;
+        setProcessing(true);
+        setToastStatus("⏳ Ejecutando mapeo visual avanzado...");
+        document.getElementById('logContainer').classList.add('visible');
+        document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
+        updateLog("Iniciando mapeo visual avanzado...");
+        
+        google.script.run
+          .withSuccessHandler(function(result){
+            setProcessing(false);
+            if (result && result.log) {
+              updateLog(result.log);
+            }
+            if (result && result.success) {
+              setToastStatus("✓ Mapeo visual avanzado completado", 'success');
+            } else {
+              setToastStatus("✗ Error en mapeo visual avanzado (ver log)", 'error');
+            }
+          })
+          .withFailureHandler(function(error){
+            setProcessing(false);
+            setToastStatus("✗ Error: " + error.message, 'error');
+            updateLog("ERROR CRÍTICO: " + error.message);
+          })
+          .testVisualMappingAdvanced();
+      }
+      
+      // Inicialización
+      document.addEventListener('DOMContentLoaded', function() {
+        // Auto-focus en el campo de folder ID
+        document.getElementById('folderId').focus();
+      });
+    </script>
+  </body>
+</html>
