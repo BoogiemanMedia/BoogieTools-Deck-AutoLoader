@@ -30,7 +30,7 @@ function onOpen() {
  *  Mostrar Barra Lateral
  ******************************/
 function showSidebar() {
-  var html = HtmlService.createHtmlOutputFromFile('sidebar_v15')
+  var html = HtmlService.createHtmlOutputFromFile('sidebar_v27')
     .setTitle('BoogieTools - Panel de Control');
   SlidesApp.getUi().showSidebar(html);
 }
@@ -937,21 +937,45 @@ function extractUBAInfo(slide) {
 function slideHasLargeImage(slide) {
   var MIN_WIDTH = 400;
   var MIN_HEIGHT = 200;
-  
+
   try {
     var elements = slide.getPageElements();
-    
+
     for (var i = 0; i < elements.length; i++) {
       if (elements[i].getPageElementType() === SlidesApp.PageElementType.IMAGE) {
         var width = elements[i].getWidth();
         var height = elements[i].getHeight();
-        
+
         if (width > MIN_WIDTH && height > MIN_HEIGHT) {
           return true;
         }
       }
     }
   } catch (e) {}
-  
+
   return false;
+}
+
+/******************************
+ *  WRAPPERS PARA OTROS MÓDULOS
+ ******************************/
+
+/**
+ * Genera índice desde UBAs (módulo generate_index_from_ubas.js)
+ */
+function generateIndexFromUBAs() {
+  if (typeof generateIndexFromUBAsModule === 'function') {
+    return generateIndexFromUBAsModule();
+  }
+  return { success: false, log: "Error: Módulo de índice no encontrado" };
+}
+
+/**
+ * Reordena slides desde índice linkeado (módulo reorder_universal.js)
+ */
+function reorderFromLinkedIndex() {
+  if (typeof reorderFromLinkedIndexModule === 'function') {
+    return reorderFromLinkedIndexModule();
+  }
+  return { success: false, log: "Error: Módulo de reordenamiento no encontrado" };
 }
