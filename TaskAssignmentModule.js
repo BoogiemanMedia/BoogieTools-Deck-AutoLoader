@@ -59,15 +59,20 @@ function generateTaskAssignmentTable(assignmentData) {
     // Crear matriz de asignación correlativa
     var assignmentMatrix = createAssignmentMatrix(designers.length, piecesPerDesigner, categories);
 
-    // Crear slide y tabla usando API avanzada
+    // Usar el slide actual
     var presentation = SlidesApp.getActivePresentation();
     var presentationId = presentation.getId();
-    var slideId = Utilities.getUuid();
+    var currentSlide = presentation.getSelection().getCurrentPage();
 
-    log("Creando slide con ID: " + slideId);
+    if (!currentSlide) {
+      throw new Error("No hay un slide seleccionado. Por favor selecciona un slide.");
+    }
 
-    // Crear slide y tabla
-    createSlideAndTable(presentationId, slideId, designers, piecesPerDesigner, assignmentMatrix, log);
+    var slideId = currentSlide.getObjectId();
+    log("Usando slide actual con ID: " + slideId);
+
+    // Crear tabla en el slide actual
+    createTableInSlide(presentationId, slideId, designers, piecesPerDesigner, assignmentMatrix, log);
 
     log("✓ Tabla de asignación generada exitosamente");
 
@@ -110,9 +115,9 @@ function createAssignmentMatrix(designersCount, piecesPerDesigner, categories) {
 }
 
 /**
- * Crea el slide y la tabla en una sola operación usando API avanzada
+ * Crea la tabla en el slide actual usando API avanzada
  */
-function createSlideAndTable(presentationId, slideId, designers, piecesPerDesigner, matrix, logFunction) {
+function createTableInSlide(presentationId, slideId, designers, piecesPerDesigner, matrix, logFunction) {
   var rows = designers.length; // Sin encabezado
   var cols = 1 + piecesPerDesigner; // 1 para nombre + piezas por diseñador
 
@@ -121,17 +126,7 @@ function createSlideAndTable(presentationId, slideId, designers, piecesPerDesign
   var tableId = Utilities.getUuid();
   var requests = [];
 
-  // 1. Crear el slide
-  requests.push({
-    createSlide: {
-      objectId: slideId,
-      slideLayoutReference: {
-        predefinedLayout: 'BLANK'
-      }
-    }
-  });
-
-  // 2. Crear la tabla en el slide
+  // 1. Crear la tabla en el slide actual
   requests.push({
     createTable: {
       objectId: tableId,
@@ -170,12 +165,19 @@ function createSlideAndTable(presentationId, slideId, designers, piecesPerDesign
     }
   }
 
+  // 4. Cambiar color de texto a blanco en todas las celdas
+  for (var i = 0; i < designers.length; i++) {
+    for (var colIndex = 0; colIndex < cols; colIndex++) {
+      requests.push(createWhiteTextStyleRequest(tableId, i, colIndex));
+    }
+  }
+
   // Ejecutar TODO en una sola llamada
   try {
     Slides.Presentations.batchUpdate({ requests: requests }, presentationId);
-    logFunction("✓ Slide y tabla creados exitosamente");
+    logFunction("✓ Tabla creada exitosamente en el slide actual");
   } catch (e) {
-    logFunction("✗ Error creando slide y tabla: " + e.toString());
+    logFunction("✗ Error creando tabla: " + e.toString());
     throw e;
   }
 }
@@ -193,6 +195,35 @@ function createCellTextRequest(tableId, rowIndex, colIndex, text) {
       },
       text: text,
       insertionIndex: 0
+    }
+  };
+
+  return request;
+}
+
+/**
+ * Crea un request para cambiar el color del texto a blanco
+ */
+function createWhiteTextStyleRequest(tableId, rowIndex, colIndex) {
+  var request = {
+    updateTextStyle: {
+      objectId: tableId,
+      cellLocation: {
+        rowIndex: rowIndex,
+        columnIndex: colIndex
+      },
+      style: {
+        foregroundColor: {
+          opaqueColor: {
+            rgbColor: {
+              red: 1.0,
+              green: 1.0,
+              blue: 1.0
+            }
+          }
+        }
+      },
+      fields: "foregroundColor"
     }
   };
 
