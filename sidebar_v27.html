@@ -382,21 +382,6 @@
     <div class="card">
       <h3 class="card-title">📋 Asignaciones de Tareas</h3>
 
-      <!-- Cantidades Generales -->
-      <div style="margin-bottom: 16px;">
-        <label class="input-label">Cantidades por diseñador (aplica a todos)</label>
-        <div class="input-row">
-          <div class="input-group half">
-            <label class="input-label" style="margin-bottom: 2px;">Stills</label>
-            <input type="text" id="generalStills" placeholder="0" value="0" style="text-align: center;">
-          </div>
-          <div class="input-group half">
-            <label class="input-label" style="margin-bottom: 2px;">Conceptuales</label>
-            <input type="text" id="generalConceptual" placeholder="0" value="0" style="text-align: center;">
-          </div>
-        </div>
-      </div>
-
       <!-- Diseñadores -->
       <div style="margin-bottom: 16px;">
         <label class="input-label">Diseñadores</label>
@@ -404,6 +389,29 @@
         <div class="input-row">
           <input type="text" id="designerName" placeholder="Nombre del diseñador" style="flex: 1;">
           <button onclick="addDesigner()" class="secondary" style="flex: 0 0 auto; padding: 8px 12px;">+ Agregar</button>
+        </div>
+      </div>
+
+      <!-- Categorías -->
+      <div style="margin-bottom: 16px;">
+        <label class="input-label">Categorías (ej: 1, 2a, 2b, 3...)</label>
+        <div id="categoriesList" style="margin-bottom: 8px; max-height: 120px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+        <div class="input-row">
+          <input type="text" id="categoryInput" placeholder="Categoría (ej: 1a)" style="flex: 1;">
+          <button onclick="addCategory()" class="secondary" style="flex: 0 0 auto;">+ Agregar</button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <button onclick="autoNumberCategories()" class="secondary" style="flex: 1; font-size: 12px;">Auto: 1, 2, 3...</button>
+          <button onclick="clearCategories()" class="secondary" style="flex: 1; font-size: 12px;">Limpiar</button>
+        </div>
+      </div>
+
+      <!-- Cantidad de Stills -->
+      <div style="margin-bottom: 16px;">
+        <label class="input-label">¿Cuántas categorías son Stills? (primeras N)</label>
+        <input type="number" id="stillsCount" placeholder="0" value="0" min="0" style="text-align: center;">
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+          Las restantes serán Conceptuales
         </div>
       </div>
 
@@ -935,6 +943,7 @@
       // ========== FUNCIONES PARA ASIGNACIONES DE TAREAS ==========
 
       let designers = [];
+      let categories = [];
 
       function addDesigner() {
         const nameInput = document.getElementById('designerName');
@@ -983,22 +992,122 @@
           return;
         }
 
-        // Obtener cantidades generales
-        const stills = parseInt(document.getElementById('generalStills').value) || 0;
-        const conceptual = parseInt(document.getElementById('generalConceptual').value) || 0;
-        const total = stills + conceptual;
-
         container.innerHTML = designers.map((d, index) => {
           return `
             <div class="designer-item">
               <span class="designer-name">${d.name}</span>
-              <span class="designer-counts">S:${stills} C:${conceptual} (${total})</span>
               <button class="remove-btn" onclick="removeDesigner(${index})" title="Eliminar">×</button>
             </div>
           `;
         }).join('');
       }
 
+      function addCategory() {
+        const input = document.getElementById('categoryInput');
+        const category = input.value.trim();
+
+        if (!category) {
+          input.classList.add('error');
+          setToastStatus("⚠️ Ingresa una categoría", 'error');
+          setTimeout(() => input.classList.remove('error'), 2000);
+          return;
+        }
+
+        // Validar formato (número con letra opcional: 1, 1a, 2b, etc.)
+        const pattern = /^\d+[a-z]?$/i;
+        if (!pattern.test(category)) {
+          input.classList.add('error');
+          setToastStatus("⚠️ Formato inválido. Usa: 1, 1a, 2, 3b, etc.", 'error');
+          setTimeout(() => input.classList.remove('error'), 2000);
+          return;
+        }
+
+        // Verificar duplicados
+        if (categories.includes(category)) {
+          input.classList.add('error');
+          setToastStatus("⚠️ La categoría '" + category + "' ya existe", 'error');
+          setTimeout(() => input.classList.remove('error'), 2000);
+          return;
+        }
+
+        categories.push(category);
+        sortCategoriesLocal();
+        input.value = '';
+        input.focus();
+        updateCategoriesList();
+        setToastStatus("✓ Categoría agregada: " + category, 'success');
+      }
+
+      function removeCategory(index) {
+        const removed = categories.splice(index, 1)[0];
+        updateCategoriesList();
+        setToastStatus("✓ Categoría eliminada: " + removed, 'success');
+      }
+
+      function sortCategoriesLocal() {
+        categories.sort(function(a, b) {
+          const matchA = a.match(/^(\d+)([a-z]?)$/i);
+          const matchB = b.match(/^(\d+)([a-z]?)$/i);
+
+          if (!matchA || !matchB) return 0;
+
+          const numA = parseInt(matchA[1]);
+          const numB = parseInt(matchB[1]);
+          const letterA = matchA[2].toLowerCase();
+          const letterB = matchB[2].toLowerCase();
+
+          if (numA !== numB) return numA - numB;
+          if (letterA < letterB) return -1;
+          if (letterA > letterB) return 1;
+          return 0;
+        });
+      }
+
+      function updateCategoriesList() {
+        const container = document.getElementById('categoriesList');
+
+        if (categories.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px; padding: 4px; width: 100%;">No hay categorías agregadas</div>';
+          return;
+        }
+
+        container.innerHTML = categories.map((cat, index) => {
+          return `
+            <span class="topic-tag">
+              ${cat}
+              <span class="remove-topic" onclick="removeCategory(${index})" title="Eliminar">×</span>
+            </span>
+          `;
+        }).join('');
+      }
+
+      function autoNumberCategories() {
+        const count = prompt("¿Cuántas categorías numéricas quieres generar? (ej: 10 generará 1, 2, 3... 10)");
+
+        if (!count || isNaN(count) || parseInt(count) <= 0) {
+          setToastStatus("⚠️ Ingresa un número válido", 'error');
+          return;
+        }
+
+        const total = parseInt(count);
+        categories = [];
+        for (let i = 1; i <= total; i++) {
+          categories.push(i.toString());
+        }
+
+        updateCategoriesList();
+        setToastStatus("✓ " + total + " categorías generadas (1 a " + total + ")", 'success');
+      }
+
+      function clearCategories() {
+        if (categories.length === 0) return;
+
+        if (confirm('¿Eliminar todas las categorías (' + categories.length + ')?')) {
+          categories = [];
+          updateCategoriesList();
+          setToastStatus("✓ Categorías eliminadas", 'success');
+        }
+      }
 
       function generateAssignmentTable() {
         if (isProcessing) return;
@@ -1009,28 +1118,31 @@
           return;
         }
 
-        // Obtener cantidades generales
-        const stills = parseInt(document.getElementById('generalStills').value) || 0;
-        const conceptual = parseInt(document.getElementById('generalConceptual').value) || 0;
-        const piecesPerDesigner = stills + conceptual;
-
-        if (piecesPerDesigner === 0) {
-          setToastStatus("⚠️ Define cantidades de Stills y/o Conceptuales", 'error');
+        if (categories.length === 0) {
+          setToastStatus("⚠️ Debes agregar al menos una categoría", 'error');
           return;
         }
 
-        const totalPieces = designers.length * piecesPerDesigner;
+        const stillsCount = parseInt(document.getElementById('stillsCount').value) || 0;
+        const conceptualsCount = categories.length - stillsCount;
+
+        if (stillsCount > categories.length) {
+          setToastStatus("⚠️ La cantidad de Stills no puede ser mayor que el total de categorías", 'error');
+          return;
+        }
+
+        const totalCells = designers.length * categories.length;
 
         setProcessing(true);
         setToastStatus("⏳ Generando tabla de asignación...");
         document.getElementById('logContainer').classList.add('visible');
         document.getElementById('toggleLogBtn').innerHTML = '📋 Ocultar log detallado';
-        updateLog("Generando tabla de asignación...\nDiseñadores: " + designers.length + "\nStills: " + stills + "\nConceptuales: " + conceptual + "\nPiezas por diseñador: " + piecesPerDesigner + "\nTotal de piezas: " + totalPieces);
+        updateLog("Generando tabla de asignación...\nDiseñadores: " + designers.length + "\nCategorías totales: " + categories.length + "\nStills (primeras): " + stillsCount + "\nConceptuales (restantes): " + conceptualsCount + "\nTotal casilleros: " + totalCells);
 
         const assignmentData = {
           designers: designers,
-          stills: stills,
-          conceptual: conceptual
+          categories: categories,
+          stillsCount: stillsCount
         };
 
         google.script.run
@@ -1062,15 +1174,15 @@
 
         // Inicializar listas de asignaciones
         updateDesignersList();
+        updateCategoriesList();
 
         // Enter key handlers
         document.getElementById('designerName').addEventListener('keypress', function(e) {
           if (e.key === 'Enter') addDesigner();
         });
-
-        // Actualizar vista cuando cambien las cantidades generales
-        document.getElementById('generalStills').addEventListener('input', updateDesignersList);
-        document.getElementById('generalConceptual').addEventListener('input', updateDesignersList);
+        document.getElementById('categoryInput').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') addCategory();
+        });
       });
     </script>
   </body>

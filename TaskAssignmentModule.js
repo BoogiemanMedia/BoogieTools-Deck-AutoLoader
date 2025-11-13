@@ -2,7 +2,7 @@
  * TaskAssignmentModule.js
  *
  * Módulo para crear tablas de asignación de tareas de diseño.
- * Distribuye números correlativos (S1, S2, C1, C2...) entre diseñadores.
+ * Distribuye categorías (con posibles subcategorías) entre diseñadores.
  */
 
 /**
@@ -10,8 +10,8 @@
  *
  * @param {Object} assignmentData - Datos de la asignación
  * @param {Array} assignmentData.designers - Array de objetos {name: string}
- * @param {number} assignmentData.stills - Cantidad de Stills por diseñador
- * @param {number} assignmentData.conceptual - Cantidad de Conceptuales por diseñador
+ * @param {Array} assignmentData.categories - Array de strings con categorías (ej: ["1", "2a", "2b", "3"])
+ * @param {number} assignmentData.stillsCount - Cantidad de categorías que son Stills (primeras N)
  * @returns {Object} - {success: boolean, log: string}
  */
 function generateTaskAssignmentTable(assignmentData) {
@@ -26,27 +26,29 @@ function generateTaskAssignmentTable(assignmentData) {
     log("=== GENERANDO TABLA DE ASIGNACIÓN ===");
 
     // Validaciones
-    if (!assignmentData || !assignmentData.designers) {
-      throw new Error("Datos incompletos. Se requieren diseñadores.");
+    if (!assignmentData || !assignmentData.designers || !assignmentData.categories) {
+      throw new Error("Datos incompletos. Se requieren diseñadores y categorías.");
     }
 
     if (assignmentData.designers.length === 0) {
       throw new Error("Debe haber al menos un diseñador.");
     }
 
-    var designers = assignmentData.designers;
-    var stills = parseInt(assignmentData.stills) || 0;
-    var conceptual = parseInt(assignmentData.conceptual) || 0;
-
-    if (stills === 0 && conceptual === 0) {
-      throw new Error("Debe haber al menos un Still o Conceptual.");
+    if (assignmentData.categories.length === 0) {
+      throw new Error("Debe haber al menos una categoría.");
     }
 
+    var designers = assignmentData.designers;
+    var categories = assignmentData.categories;
+    var stillsCount = parseInt(assignmentData.stillsCount) || 0;
+    var conceptualsCount = categories.length - stillsCount;
+
     log("Diseñadores: " + designers.length);
-    log("Stills por diseñador: " + stills);
-    log("Conceptuales por diseñador: " + conceptual);
-    log("Piezas por diseñador: " + (stills + conceptual));
-    log("Total de piezas: " + (designers.length * (stills + conceptual)));
+    log("Categorías totales: " + categories.length);
+    log("Categorías Stills: " + stillsCount + " (primeras)");
+    log("Categorías Conceptuales: " + conceptualsCount + " (restantes)");
+    log("Casilleros por diseñador: " + categories.length);
+    log("Total de casilleros: " + (designers.length * categories.length));
 
     // Crear slide y tabla usando API avanzada
     var presentation = SlidesApp.getActivePresentation();
@@ -56,7 +58,7 @@ function generateTaskAssignmentTable(assignmentData) {
     log("Creando slide con ID: " + slideId);
 
     // Crear slide y tabla
-    createSlideAndTable(presentationId, slideId, designers, stills, conceptual, log);
+    createSlideAndTable(presentationId, slideId, designers, categories, log);
 
     log("✓ Tabla de asignación generada exitosamente");
 
@@ -79,9 +81,9 @@ function generateTaskAssignmentTable(assignmentData) {
 /**
  * Crea el slide y la tabla en una sola operación usando API avanzada
  */
-function createSlideAndTable(presentationId, slideId, designers, stills, conceptual, logFunction) {
+function createSlideAndTable(presentationId, slideId, designers, categories, logFunction) {
   var rows = designers.length; // Sin encabezado
-  var cols = 1 + stills + conceptual; // 1 para nombre + categorías
+  var cols = 1 + categories.length; // 1 para nombre + categorías
 
   logFunction("Creando tabla de " + rows + " filas x " + cols + " columnas");
 
@@ -122,9 +124,6 @@ function createSlideAndTable(presentationId, slideId, designers, stills, concept
   });
 
   // 3. Llenar contenido de la tabla
-  var stillCounter = 1;
-  var conceptualCounter = 1;
-
   for (var i = 0; i < designers.length; i++) {
     var designer = designers[i];
     var colIndex = 0;
@@ -133,17 +132,9 @@ function createSlideAndTable(presentationId, slideId, designers, stills, concept
     requests.push(createCellTextRequest(tableId, i, colIndex, designer.name));
     colIndex++;
 
-    // Columnas de Stills: S1, S2, S3...
-    for (var s = 0; s < stills; s++) {
-      requests.push(createCellTextRequest(tableId, i, colIndex, "S" + stillCounter));
-      stillCounter++;
-      colIndex++;
-    }
-
-    // Columnas de Conceptuales: C1, C2, C3...
-    for (var c = 0; c < conceptual; c++) {
-      requests.push(createCellTextRequest(tableId, i, colIndex, "C" + conceptualCounter));
-      conceptualCounter++;
+    // Resto de columnas: categorías (se repiten para cada diseñador)
+    for (var c = 0; c < categories.length; c++) {
+      requests.push(createCellTextRequest(tableId, i, colIndex, categories[c]));
       colIndex++;
     }
   }
@@ -178,6 +169,43 @@ function createCellTextRequest(tableId, rowIndex, colIndex, text) {
 }
 
 /**
+ * Valida el formato de una categoría (permite números y subcategorías)
+ * Ejemplos válidos: "1", "1a", "1b", "2", "10c", etc.
+ */
+function validateCategoryFormat(category) {
+  var pattern = /^\d+[a-z]?$/i;
+  return pattern.test(category.trim());
+}
+
+/**
+ * Ordena categorías en orden natural (1, 1a, 1b, 2, 2a, 3, etc.)
+ */
+function sortCategories(categories) {
+  return categories.sort(function(a, b) {
+    // Extraer número y letra
+    var matchA = a.match(/^(\d+)([a-z]?)$/i);
+    var matchB = b.match(/^(\d+)([a-z]?)$/i);
+
+    if (!matchA || !matchB) return 0;
+
+    var numA = parseInt(matchA[1]);
+    var numB = parseInt(matchB[1]);
+    var letterA = matchA[2].toLowerCase();
+    var letterB = matchB[2].toLowerCase();
+
+    // Comparar primero por número
+    if (numA !== numB) {
+      return numA - numB;
+    }
+
+    // Si el número es igual, comparar por letra
+    if (letterA < letterB) return -1;
+    if (letterA > letterB) return 1;
+    return 0;
+  });
+}
+
+/**
  * Función de prueba con datos de ejemplo
  */
 function testTaskAssignment() {
@@ -185,12 +213,10 @@ function testTaskAssignment() {
     designers: [
       { name: "Ana García" },
       { name: "Carlos López" },
-      { name: "María Torres" },
-      { name: "Juan Pérez" },
-      { name: "Laura Martínez" }
+      { name: "María Torres" }
     ],
-    stills: 3,
-    conceptual: 2
+    categories: ["1", "2a", "2b", "2c", "3", "4", "5"],
+    stillsCount: 5 // Primeras 5 son Stills (1, 2a, 2b, 2c, 3), resto Conceptuales (4, 5)
   };
 
   var result = generateTaskAssignmentTable(testData);
