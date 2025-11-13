@@ -2,7 +2,7 @@
  * TaskAssignmentModule.js
  *
  * Módulo para crear tablas de asignación de tareas de diseño.
- * Distribuye categorías (con posibles subcategorías) entre diseñadores.
+ * Distribuye categorías correlativamente entre diseñadores según su capacidad.
  */
 
 /**
@@ -11,6 +11,7 @@
  * @param {Object} assignmentData - Datos de la asignación
  * @param {Array} assignmentData.designers - Array de objetos {name: string}
  * @param {Array} assignmentData.categories - Array de strings con categorías (ej: ["1", "2a", "2b", "3"])
+ * @param {number} assignmentData.piecesPerDesigner - Máximo de piezas por diseñador
  * @param {number} assignmentData.stillsCount - Cantidad de categorías que son Stills (primeras N)
  * @returns {Object} - {success: boolean, log: string}
  */
@@ -40,15 +41,23 @@ function generateTaskAssignmentTable(assignmentData) {
 
     var designers = assignmentData.designers;
     var categories = assignmentData.categories;
+    var piecesPerDesigner = parseInt(assignmentData.piecesPerDesigner) || 0;
     var stillsCount = parseInt(assignmentData.stillsCount) || 0;
     var conceptualsCount = categories.length - stillsCount;
 
+    if (piecesPerDesigner === 0) {
+      throw new Error("Debe definir cuántas piezas hace cada diseñador.");
+    }
+
     log("Diseñadores: " + designers.length);
     log("Categorías totales: " + categories.length);
+    log("Piezas máximas por diseñador: " + piecesPerDesigner);
     log("Categorías Stills: " + stillsCount + " (primeras)");
     log("Categorías Conceptuales: " + conceptualsCount + " (restantes)");
-    log("Casilleros por diseñador: " + categories.length);
-    log("Total de casilleros: " + (designers.length * categories.length));
+    log("Capacidad total: " + (designers.length * piecesPerDesigner));
+
+    // Crear matriz de asignación correlativa
+    var assignmentMatrix = createAssignmentMatrix(designers.length, piecesPerDesigner, categories);
 
     // Crear slide y tabla usando API avanzada
     var presentation = SlidesApp.getActivePresentation();
@@ -58,7 +67,7 @@ function generateTaskAssignmentTable(assignmentData) {
     log("Creando slide con ID: " + slideId);
 
     // Crear slide y tabla
-    createSlideAndTable(presentationId, slideId, designers, categories, log);
+    createSlideAndTable(presentationId, slideId, designers, piecesPerDesigner, assignmentMatrix, log);
 
     log("✓ Tabla de asignación generada exitosamente");
 
@@ -79,11 +88,33 @@ function generateTaskAssignmentTable(assignmentData) {
 }
 
 /**
+ * Crea la matriz de asignación distribuyendo categorías correlativamente
+ * Las categorías se reciclan/repiten hasta llenar toda la tabla
+ * @returns {Array} - Matriz [diseñadores][columnas] con las categorías asignadas
+ */
+function createAssignmentMatrix(designersCount, piecesPerDesigner, categories) {
+  var matrix = [];
+  var categoryIndex = 0;
+
+  // Distribuir categorías correlativamente (reciclándolas si es necesario)
+  for (var i = 0; i < designersCount; i++) {
+    matrix[i] = [];
+    for (var j = 0; j < piecesPerDesigner; j++) {
+      // Usar módulo para reciclar las categorías cuando se acaben
+      matrix[i][j] = categories[categoryIndex % categories.length];
+      categoryIndex++;
+    }
+  }
+
+  return matrix;
+}
+
+/**
  * Crea el slide y la tabla en una sola operación usando API avanzada
  */
-function createSlideAndTable(presentationId, slideId, designers, categories, logFunction) {
+function createSlideAndTable(presentationId, slideId, designers, piecesPerDesigner, matrix, logFunction) {
   var rows = designers.length; // Sin encabezado
-  var cols = 1 + categories.length; // 1 para nombre + categorías
+  var cols = 1 + piecesPerDesigner; // 1 para nombre + piezas por diseñador
 
   logFunction("Creando tabla de " + rows + " filas x " + cols + " columnas");
 
@@ -132,9 +163,9 @@ function createSlideAndTable(presentationId, slideId, designers, categories, log
     requests.push(createCellTextRequest(tableId, i, colIndex, designer.name));
     colIndex++;
 
-    // Resto de columnas: categorías (se repiten para cada diseñador)
-    for (var c = 0; c < categories.length; c++) {
-      requests.push(createCellTextRequest(tableId, i, colIndex, categories[c]));
+    // Resto de columnas: categorías asignadas correlativamente (siempre tienen valor)
+    for (var j = 0; j < piecesPerDesigner; j++) {
+      requests.push(createCellTextRequest(tableId, i, colIndex, matrix[i][j]));
       colIndex++;
     }
   }
@@ -213,10 +244,13 @@ function testTaskAssignment() {
     designers: [
       { name: "Ana García" },
       { name: "Carlos López" },
-      { name: "María Torres" }
+      { name: "María Torres" },
+      { name: "Juan Pérez" },
+      { name: "Laura Martínez" }
     ],
-    categories: ["1", "2a", "2b", "2c", "3", "4", "5"],
-    stillsCount: 5 // Primeras 5 son Stills (1, 2a, 2b, 2c, 3), resto Conceptuales (4, 5)
+    categories: ["1", "2a", "2b", "3", "4", "5", "6", "7"],
+    piecesPerDesigner: 2, // Cada diseñador hace máximo 2 piezas
+    stillsCount: 5 // Primeras 5 categorías son Stills
   };
 
   var result = generateTaskAssignmentTable(testData);
