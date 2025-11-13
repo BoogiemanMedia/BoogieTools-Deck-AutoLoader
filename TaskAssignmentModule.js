@@ -12,7 +12,7 @@
  * @param {Array} assignmentData.designers - Array de objetos {name: string}
  * @param {Array} assignmentData.categories - Array de strings con categorías (ej: ["1", "2a", "2b", "3"])
  * @param {number} assignmentData.piecesPerDesigner - Máximo de piezas por diseñador
- * @param {number} assignmentData.stillsCount - Cantidad de categorías que son Stills (primeras N)
+ * @param {number} assignmentData.stillsCount - Cantidad de COLUMNAS que son Stills (primeras N columnas)
  * @returns {Object} - {success: boolean, log: string}
  */
 function generateTaskAssignmentTable(assignmentData) {
@@ -43,7 +43,7 @@ function generateTaskAssignmentTable(assignmentData) {
     var categories = assignmentData.categories;
     var piecesPerDesigner = parseInt(assignmentData.piecesPerDesigner) || 0;
     var stillsCount = parseInt(assignmentData.stillsCount) || 0;
-    var conceptualsCount = categories.length - stillsCount;
+    var conceptualsCount = piecesPerDesigner - stillsCount;
 
     if (piecesPerDesigner === 0) {
       throw new Error("Debe definir cuántas piezas hace cada diseñador.");
@@ -51,9 +51,9 @@ function generateTaskAssignmentTable(assignmentData) {
 
     log("Diseñadores: " + designers.length);
     log("Categorías totales: " + categories.length);
-    log("Piezas máximas por diseñador: " + piecesPerDesigner);
-    log("Categorías Stills: " + stillsCount + " (primeras)");
-    log("Categorías Conceptuales: " + conceptualsCount + " (restantes)");
+    log("Piezas por diseñador: " + piecesPerDesigner);
+    log("Columnas Stills (primeras): " + stillsCount);
+    log("Columnas Conceptuales (restantes): " + conceptualsCount);
     log("Capacidad total: " + (designers.length * piecesPerDesigner));
 
     // Crear matriz de asignación correlativa
@@ -244,13 +244,11 @@ function testTaskAssignment() {
     designers: [
       { name: "Ana García" },
       { name: "Carlos López" },
-      { name: "María Torres" },
-      { name: "Juan Pérez" },
-      { name: "Laura Martínez" }
+      { name: "María Torres" }
     ],
-    categories: ["1", "2a", "2b", "3", "4", "5", "6", "7"],
-    piecesPerDesigner: 2, // Cada diseñador hace máximo 2 piezas
-    stillsCount: 5 // Primeras 5 categorías son Stills
+    categories: ["1", "2", "3", "4", "5", "6"],
+    piecesPerDesigner: 6, // Cada diseñador hace 6 piezas (6 columnas)
+    stillsCount: 4 // Primeras 4 COLUMNAS son Stills, últimas 2 son Conceptuales
   };
 
   var result = generateTaskAssignmentTable(testData);
